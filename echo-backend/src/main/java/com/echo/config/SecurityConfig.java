@@ -11,7 +11,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * 安全配置
- * 初期全放开，后续加 JWT 认证
+ * 初期放开认证接口，后续加 JWT
  */
 @Configuration
 @EnableWebSecurity
