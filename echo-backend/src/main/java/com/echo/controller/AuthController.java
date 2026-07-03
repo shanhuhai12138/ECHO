@@ -5,9 +5,9 @@ import com.echo.dto.response.UserResponse;
 import com.echo.entity.User;
 import com.echo.repository.UserRepository;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -18,10 +18,15 @@ import java.time.LocalDateTime;
  */
 @RestController
 @RequestMapping("/api/auth")
-@RequiredArgsConstructor
 public class AuthController {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     /**
      * 用户注册
@@ -33,10 +38,10 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
 
-        // 创建用户
+        // 密码 BCrypt 加密后存储
         User user = User.builder()
                 .username(req.getUsername())
-                .password(req.getPassword()) // TODO: 后续用 BCrypt 加密
+                .password(passwordEncoder.encode(req.getPassword()))
                 .nickname(req.getNickname() != null ? req.getNickname() : req.getUsername())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
