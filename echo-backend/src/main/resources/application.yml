@@ -1,0 +1,39 @@
+# ECHO 应用配置
+server:
+  port: 8099
+
+spring:
+  application:
+    name: echo-backend
+
+  # 数据源配置（开发环境默认本地 PostgreSQL）
+  datasource:
+    url: jdbc:postgresql://localhost:5432/echo
+    username: echo
+    password: echo123
+    driver-class-name: org.postgresql.Driver
+
+  # JPA / Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+
+  # Jackson
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+# 日志
+logging:
+  level:
+    com.echo: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
