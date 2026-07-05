@@ -2,6 +2,7 @@ package com.echo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -9,8 +10,7 @@ import org.springframework.web.filter.CorsFilter;
 import java.util.List;
 
 /**
- * Web 配置 - CORS 跨域
- * 前端开发服务器默认端口 5173 (Vite) 或 3000 (React)
+ * Web 配置 - CORS 跨域 + RestTemplate
  */
 @Configuration
 public class WebConfig {
@@ -27,5 +27,13 @@ public class WebConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
+    }
+
+    /**
+     * HTTP 客户端，用于调用 LLM API
+     */
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }
