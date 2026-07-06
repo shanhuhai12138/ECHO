@@ -1,5 +1,6 @@
 package com.echo.service;
 
+import com.echo.dto.request.PersonaDimensionRequest;
 import com.echo.dto.response.QuizQuestionResponse;
 import com.echo.dto.response.QuizResultResponse;
 import com.echo.entity.*;
@@ -28,6 +29,7 @@ public class QuizService {
     private final QuizOptionRepository optionRepo;
     private final QuizAttemptRepository attemptRepo;
     private final UserRepository userRepo;
+    private final PersonaService personaService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -158,13 +160,59 @@ public class QuizService {
 
     /**
      * 将答题结果映射到画像维度
+     * 遍历 profileDelta，逐个调用 PersonaService 更新维度
      */
     private void updatePersonasFromQuiz(UUID userId, Map<String, Object> profileDelta) {
-        // 这里调用 PersonaService 的 upsertDimension
-        // 由于避免循环依赖，直接操作 repository
-        // 后续可以抽成独立的服务
-        log.info("Quiz profile delta for user {}: {}", userId, profileDelta);
-        // TODO: 调用 PersonaService.upsertDimension 更新每个维度
+        if (profileDelta.isEmpty()) {
+            log.info("No profile delta to update for user {}", userId);
+            return;
+        }
+
+        for (Map.Entry<String, Object> entry : profileDelta.entrySet()) {
+            String dimensionKey = entry.getKey();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> delta = (Map<String, Object>) entry.getValue();
+
+            try {
+                // 构建画像维度请求
+                PersonaDimensionRequest req = new PersonaDimensionRequest();
+                req.setDimensionKey(dimensionKey);
+
+                // 从 delta 中提取维度信息
+                String label = (String) delta.getOrDefault("dimensionLabel", dimensionKey);
+                req.setDimensionLabel(label);
+
+                Object scoreObj = delta.get("score");
+                if (scoreObj != null) {
+                    BigDecimal score;
+                    if (scoreObj instanceof BigDecimal) {
+                        score = (BigDecimal) scoreObj;
+                    } else if (scoreObj instanceof Number) {
+                        score = BigDecimal.valueOf(((Number) scoreObj).doubleValue());
+                    } else {
+                        score = BigDecimal.ZERO;
+                    }
+                    req.setScore(score);
+                }
+
+                String summary = (String) delta.get("summary");
+                if (summary != null && !summary.isBlank()) {
+                    req.setTextSummary(summary);
+                }
+
+                // 设置置信度（答题来源，置信度较高）
+                req.setConfidence(new BigDecimal("0.85"));
+                req.setSource("quiz");
+
+                // 调用 PersonaService 更新维度
+                personaService.upsertDimension(userId, req);
+                log.info("Updated persona dimension {} for user {} from quiz", dimensionKey, userId);
+
+            } catch (Exception e) {
+                log.error("Failed to update persona dimension {} for user {}: {}",
+                        dimensionKey, userId, e.getMessage());
+            }
+        }
     }
 
     /**
