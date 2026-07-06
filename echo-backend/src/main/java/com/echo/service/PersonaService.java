@@ -3,6 +3,7 @@ package com.echo.service;
 import com.echo.dto.request.PersonaDimensionRequest;
 import com.echo.dto.response.PersonaDimensionResponse;
 import com.echo.dto.response.PersonaSummaryResponse;
+import com.echo.dto.response.UpdateLogResponse;
 import com.echo.entity.PersonaDimension;
 import com.echo.entity.PersonaUpdateLog;
 import com.echo.entity.User;
@@ -137,8 +138,10 @@ public class PersonaService {
      * 获取用户画像变更历史
      */
     @Transactional(readOnly = true)
-    public List<PersonaUpdateLog> getUpdateHistory(UUID userId) {
-        return logRepo.findByUserIdOrderByCreatedAtDesc(userId);
+    public List<UpdateLogResponse> getUpdateHistory(UUID userId) {
+        return logRepo.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(UpdateLogResponse::from)
+                .toList();
     }
 
     // ========== 私有辅助方法 ==========

@@ -3,7 +3,7 @@ package com.echo.controller;
 import com.echo.dto.request.PersonaDimensionRequest;
 import com.echo.dto.response.PersonaDimensionResponse;
 import com.echo.dto.response.PersonaSummaryResponse;
-import com.echo.entity.PersonaUpdateLog;
+import com.echo.dto.response.UpdateLogResponse;
 import com.echo.service.PersonaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -80,7 +80,7 @@ public class PersonaController {
      * GET /api/persona/{userId}/history
      */
     @GetMapping("/{userId}/history")
-    public ResponseEntity<List<PersonaUpdateLog>> getHistory(@PathVariable UUID userId) {
+    public ResponseEntity<List<UpdateLogResponse>> getHistory(@PathVariable UUID userId) {
         return ResponseEntity.ok(personaService.getUpdateHistory(userId));
     }
 }

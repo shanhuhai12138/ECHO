@@ -5,7 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -37,20 +38,20 @@ public class PersonaUpdateLog {
     @Column(nullable = false, length = 100)
     private String dimensionKey;
 
-    /** 更新前的数据快照 */
-    @Column(columnDefinition = "jsonb")
+    /** 更新前的数据快照（JSON 字符串） */
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     private String oldValue;
 
-    /** 更新后的数据快照 */
-    @Column(columnDefinition = "jsonb")
+    /** 更新后的数据快照（JSON 字符串） */
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     private String newValue;
 
     /** 触发类型：quiz_result / chat_sentiment / manual */
     @Column(nullable = false, length = 50)
     private String triggerType;
 
-    /** 触发时的原始数据快照 */
-    @Column(columnDefinition = "jsonb")
+    /** 触发时的原始数据快照（JSON 字符串） */
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     private String triggerData;
 
     /** 创建时间 */
