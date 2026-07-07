@@ -2,11 +2,7 @@
   <div class="login-page">
     <div class="login-card">
       <div class="login-header">
-        <div class="logo-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-        </div>
+        <div class="logo-icon">⟡</div>
         <h1>ECHO</h1>
         <p class="subtitle">你的情绪伙伴，陪你一起成长</p>
       </div>
@@ -14,28 +10,12 @@
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
           <label class="form-label" for="username">用户名</label>
-          <input
-            id="username"
-            v-model="form.username"
-            class="form-input"
-            type="text"
-            placeholder="请输入用户名"
-            required
-            autocomplete="username"
-          />
+          <input id="username" v-model="form.username" class="form-input" type="text" placeholder="请输入用户名" required autocomplete="username" />
         </div>
 
         <div class="form-group">
           <label class="form-label" for="password">密码</label>
-          <input
-            id="password"
-            v-model="form.password"
-            class="form-input"
-            type="password"
-            placeholder="请输入密码"
-            required
-            autocomplete="current-password"
-          />
+          <input id="password" v-model="form.password" class="form-input" type="password" placeholder="请输入密码" required autocomplete="current-password" />
         </div>
 
         <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
@@ -49,8 +29,7 @@
       </form>
 
       <p class="login-footer">
-        还没有账号？
-        <router-link to="/register">立即注册</router-link>
+        还没有账号？<router-link to="/register">立即注册</router-link>
       </p>
 
       <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
@@ -76,19 +55,14 @@ async function handleLogin() {
   errorMsg.value = ''
 
   try {
-    // 初期：登录即注册（如果用户不存在）
+    // 注册即登录（初期简化版）
     const res = await register(form.username, form.password, form.username)
     authStore.setUser(res.data)
     router.push('/dashboard')
   } catch (err) {
     if (err.response?.status === 409) {
-      // 用户已存在，跳过注册直接进 dashboard
-      // TODO: 后续加登录接口
-      authStore.setUser({
-        id: null, // TODO: 从登录接口拿
-        username: form.username,
-        nickname: form.username,
-      })
+      // 用户已存在，直接进 dashboard
+      authStore.setUser({ id: null, username: form.username, nickname: form.username })
       router.push('/dashboard')
     } else {
       errorMsg.value = err.response?.data?.error || '登录失败，请稍后重试'
@@ -128,20 +102,18 @@ async function handleLogin() {
   width: 56px;
   height: 56px;
   margin: 0 auto var(--space-md);
-  background: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-}
-
-.logo-icon svg {
-  width: 28px;
-  height: 28px;
+  font-size: 28px;
+  font-family: var(--font-serif);
 }
 
 .login-header h1 {
+  font-family: var(--font-serif);
   font-size: 1.75rem;
   margin-bottom: var(--space-xs);
   color: var(--color-primary);
@@ -174,6 +146,7 @@ async function handleLogin() {
 
 .login-footer a {
   font-weight: 500;
+  color: var(--color-primary);
 }
 
 .error-msg {

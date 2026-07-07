@@ -2,11 +2,7 @@
   <div class="register-page">
     <div class="register-card">
       <div class="register-header">
-        <div class="logo-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-        </div>
+        <div class="logo-icon">⟡</div>
         <h1>创建 ECHO 账号</h1>
         <p class="subtitle">开始你的情绪成长之旅</p>
       </div>
@@ -14,43 +10,17 @@
       <form @submit.prevent="handleRegister" class="register-form">
         <div class="form-group">
           <label class="form-label" for="reg-username">用户名</label>
-          <input
-            id="reg-username"
-            v-model="form.username"
-            class="form-input"
-            type="text"
-            placeholder="选择一个用户名"
-            required
-            minlength="3"
-            maxlength="50"
-            autocomplete="username"
-          />
+          <input id="reg-username" v-model="form.username" class="form-input" type="text" placeholder="选择一个用户名" required minlength="3" maxlength="50" autocomplete="username" />
         </div>
 
         <div class="form-group">
           <label class="form-label" for="reg-nickname">昵称（可选）</label>
-          <input
-            id="reg-nickname"
-            v-model="form.nickname"
-            class="form-input"
-            type="text"
-            placeholder="大家怎么称呼你"
-            maxlength="100"
-          />
+          <input id="reg-nickname" v-model="form.nickname" class="form-input" type="text" placeholder="大家怎么称呼你" maxlength="100" />
         </div>
 
         <div class="form-group">
           <label class="form-label" for="reg-password">密码</label>
-          <input
-            id="reg-password"
-            v-model="form.password"
-            class="form-input"
-            type="password"
-            placeholder="至少 6 个字符"
-            required
-            minlength="6"
-            autocomplete="new-password"
-          />
+          <input id="reg-password" v-model="form.password" class="form-input" type="password" placeholder="至少 6 个字符" required minlength="6" autocomplete="new-password" />
         </div>
 
         <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
@@ -64,8 +34,7 @@
       </form>
 
       <p class="register-footer">
-        已有账号？
-        <router-link to="/">去登录</router-link>
+        已有账号？<router-link to="/">去登录</router-link>
       </p>
 
       <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
@@ -139,20 +108,18 @@ async function handleRegister() {
   width: 56px;
   height: 56px;
   margin: 0 auto var(--space-md);
-  background: var(--color-accent);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light));
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-}
-
-.logo-icon svg {
-  width: 28px;
-  height: 28px;
+  font-size: 28px;
+  font-family: var(--font-serif);
 }
 
 .register-header h1 {
+  font-family: var(--font-serif);
   font-size: 1.5rem;
   margin-bottom: var(--space-xs);
 }
@@ -183,6 +150,7 @@ async function handleRegister() {
 
 .register-footer a {
   font-weight: 500;
+  color: var(--color-primary);
 }
 
 .error-msg {
