@@ -1,11 +1,4 @@
-import api from '../api'
-
-/**
- * 用户注册
- */
-export function register(username, password, nickname) {
-  return api.post('/auth/register', { username, password, nickname })
-}
+import api from './index'
 
 /**
  * 获取用户的聊天框列表

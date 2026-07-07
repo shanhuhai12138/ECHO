@@ -1,125 +1,165 @@
 <template>
   <div class="chat-page">
-    <!-- Top bar -->
-    <header class="topbar">
-      <div class="topbar-inner container">
-        <button class="btn btn-secondary btn-icon" @click="$router.push('/dashboard')" title="返回">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="brand">⟡ ECHO</div>
+      <router-link to="/" class="back-btn">← 返回首页</router-link>
+
+      <div class="sidebar-section">我的对话</div>
+      <div class="entity-list">
+        <div
+          v-for="box in chatBoxes"
+          :key="box.id"
+          class="entity-item"
+          :class="{ active: activeBoxId === box.id }"
+          @click="selectBox(box)"
+        >
+          <div class="entity-avatar" :class="box.type.toLowerCase()">
+            {{ box.type === 'SELF' ? '我' : box.name.charAt(0) }}
+          </div>
+          <div class="entity-meta">
+            <span class="entity-name">{{ box.name }}</span>
+            <span class="entity-relation">{{ box.type === 'SELF' ? '自我' : box.scenario || '角色' }}</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 聊天区域 -->
+    <main class="chat-main">
+      <header class="chat-header">
+        <h2>{{ activeBox?.name || '选择对话' }}</h2>
+        <p v-if="activeBox" class="chat-sub">
+          {{ activeBox.type === 'SELF' ? '与你的核心画像交流' : (activeBox.scenario || '') }}
+        </p>
+      </header>
+
+      <!-- 消息列表 -->
+      <div class="messages-container" ref="messagesEnd">
+        <div v-if="messages.length === 0" class="messages-empty">
+          <div class="empty-icon">⟡</div>
+          <h3>开始你的第一次对话吧</h3>
+          <p>在下方输入框中输入你想说的话</p>
+        </div>
+
+        <div v-else class="messages-list">
+          <div
+            v-for="(msg, idx) in messages"
+            :key="idx"
+            class="message"
+            :class="msg.messageType.toLowerCase()"
+          >
+            <div class="avatar" :class="msg.messageType.toLowerCase()">
+              {{ msg.messageType === 'USER' ? '张' : 'E' }}
+            </div>
+            <div class="message-content">
+              <div class="bubble">{{ msg.content }}</div>
+              <div class="meta">
+                {{ msg.messageType === 'USER' ? authStore.nickname || authStore.username : 'ECHO' }} · {{ formatTime(msg.createdAt) }}
+              </div>
+            </div>
+          </div>
+
+          <!-- 加载中指示器 -->
+          <div v-if="sending" class="message assistant">
+            <div class="avatar assistant">E</div>
+            <div class="message-content">
+              <div class="bubble typing">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 输入框 -->
+      <footer class="chat-input">
+        <textarea
+          v-model="inputText"
+          placeholder="输入你想说的话..."
+          @keydown.enter.exact.prevent="sendMessage"
+          :disabled="sending"
+          rows="1"
+        ></textarea>
+        <button @click="sendMessage" :disabled="!inputText.trim() || sending" class="send-btn">
+          <svg v-if="!sending" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+          <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" stroke-dasharray="30" stroke-dashoffset="8">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/>
+            </circle>
           </svg>
         </button>
-        <div class="chat-title">
-          <h3>{{ chatBox?.name || '对话中...' }}</h3>
-          <span v-if="chatBox?.scenario" class="chat-scenario">{{ chatBox.scenario }}</span>
-        </div>
-        <router-link to="/dashboard" class="btn btn-secondary btn-sm">退出</router-link>
-      </div>
-    </header>
-
-    <!-- Messages area -->
-    <main class="messages-container container">
-      <div ref="messagesEnd" class="messages-list">
-        <!-- Empty state -->
-        <div v-if="messages.length === 0" class="messages-empty">
-          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          <p>开始你的第一次对话吧</p>
-        </div>
-
-        <!-- Message bubbles -->
-        <div
-          v-for="msg in messages"
-          :key="msg.id"
-          class="message-row"
-          :class="msg.messageType.toLowerCase()"
-        >
-          <div class="message-bubble">
-            <p>{{ msg.content }}</p>
-            <span class="message-time">{{ formatTime(msg.createdAt) }}</span>
-          </div>
-        </div>
-
-        <!-- Typing indicator -->
-        <div v-if="sending" class="message-row assistant">
-          <div class="message-bubble typing">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-          </div>
-        </div>
-      </div>
+      </footer>
     </main>
-
-    <!-- Input area -->
-    <footer class="input-area">
-      <div class="container">
-        <form @submit.prevent="sendMessage" class="input-wrapper">
-          <textarea
-            v-model="inputText"
-            class="chat-input"
-            placeholder="输入你想说的话..."
-            rows="1"
-            @keydown.enter.exact.prevent="sendMessage"
-            :disabled="sending"
-          />
-          <button type="submit" class="btn btn-primary btn-send" :disabled="!inputText.trim() || sending">
-            <svg v-if="!sending" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-            <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" stroke-dasharray="30" stroke-dashoffset="8">
-                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/>
-              </circle>
-            </svg>
-          </button>
-        </form>
-      </div>
-    </footer>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, nextTick, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { getChatBoxes, createChatBox } from '../api/services'
+import api from '../api'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 
+const chatBoxes = ref([])
+const activeBoxId = ref(route.params.id)
+const activeBox = ref(null)
 const messages = ref([])
 const inputText = ref('')
 const sending = ref(false)
 const messagesEnd = ref(null)
 
-// 模拟的聊天框信息（后续从 API 获取）
-const chatBox = computed(() => ({
-  id: route.params.id,
-  name: '我的对话',
-  scenario: '',
-}))
+onMounted(async () => {
+  try {
+    const res = await getChatBoxes(authStore.userId)
+    chatBoxes.value = res.data
 
-function scrollToBottom() {
-  nextTick(() => {
-    if (messagesEnd.value) {
-      messagesEnd.value.scrollTop = messagesEnd.value.scrollHeight
+    // 加载当前聊天框的消息
+    if (activeBoxId.value) {
+      await loadMessages(activeBoxId.value)
     }
-  })
+  } catch (e) {
+    console.error('Failed to load chat boxes:', e)
+  }
+})
+
+// 监听路由变化，切换聊天框
+watch(() => route.params.id, async (newId) => {
+  if (newId) {
+    activeBoxId.value = newId
+    messages.value = []
+    await loadMessages(newId)
+  }
+})
+
+async function loadMessages(chatBoxId) {
+  try {
+    const res = await api.get(`/api/chat/${chatBoxId}/messages`)
+    messages.value = res.data
+    scrollToBottom()
+  } catch (e) {
+    console.error('Failed to load messages:', e)
+  }
 }
 
-watch(messages, () => scrollToBottom(), { deep: true })
-
-function formatTime(dateStr) {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+function selectBox(box) {
+  activeBoxId.value = box.id
+  activeBox.value = box
+  router.push(`/chat/${box.id}`)
 }
 
 async function sendMessage() {
-  if (!inputText.value.trim() || sending.value) return
+  if (!inputText.value.trim() || sending.value || !activeBoxId.value) return
 
   const userMsg = {
-    id: Date.now().toString(),
     messageType: 'USER',
     content: inputText.value.trim(),
     createdAt: new Date().toISOString(),
@@ -129,86 +169,207 @@ async function sendMessage() {
   const userText = inputText.value
   inputText.value = ''
   sending.value = true
+  scrollToBottom()
 
-  // TODO: 调用 AI 接口
-  // 这里先用模拟回复演示 UI 效果
-  setTimeout(() => {
+  try {
+    // 调用后端 AI 接口
+    const res = await api.post(`/api/chat/${activeBoxId.value}`, { content: userText })
+
     const aiMsg = {
-      id: (Date.now() + 1).toString(),
+      id: res.data.messageId,
       messageType: 'ASSISTANT',
-      content: generateMockReply(userText),
+      content: res.data.content,
       createdAt: new Date().toISOString(),
     }
     messages.value.push(aiMsg)
+  } catch (e) {
+    console.error('AI 调用失败:', e)
+    // 降级：显示友好提示
+    const errorMsg = {
+      messageType: 'ASSISTANT',
+      content: '抱歉，AI 服务暂时不可用，请稍后再试。',
+      createdAt: new Date().toISOString(),
+    }
+    messages.value.push(errorMsg)
+  } finally {
     sending.value = false
-  }, 1000 + Math.random() * 1000)
+    scrollToBottom()
+  }
 }
 
-// 模拟 AI 回复（后续替换为真实 AI 调用）
-function generateMockReply(input) {
-  const replies = [
-    `我听到了你说的"${input}"。作为一个关心你的人，我想告诉你，你的感受是值得被重视的。`,
-    `谢谢你愿意和我分享这些。从你的角度来看，我能感受到你内心的力量。`,
-    `这是一个很好的话题。让我从另一个角度帮你思考一下……`,
-    `我能理解你的心情。有时候我们需要停下来，好好听听自己内心的声音。`,
-    `你说得很有道理。不过我也在想，也许我们可以换个角度来看这件事。`,
-  ]
-  return replies[Math.floor(Math.random() * replies.length)]
+function scrollToBottom() {
+  nextTick(() => {
+    if (messagesEnd.value) {
+      messagesEnd.value.scrollTop = messagesEnd.value.scrollHeight
+    }
+  })
 }
 
-onMounted(() => {
-  scrollToBottom()
-})
+function formatTime(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+}
 </script>
 
 <style scoped>
 .chat-page {
   display: flex;
-  flex-direction: column;
   height: 100vh;
   background: var(--color-bg);
 }
 
-.topbar {
+/* 侧边栏 */
+.sidebar {
+  width: 280px;
+  background: var(--color-primary-bg);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  flex-shrink: 0;
+}
+
+.brand {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 20px;
+  padding-left: 8px;
+}
+
+.back-btn {
+  display: inline-block;
+  padding: 8px 16px;
   background: var(--color-bg-card);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all var(--transition-base);
+  margin-bottom: 20px;
+}
+
+.back-btn:hover {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
+}
+
+.sidebar-section {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-primary);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 16px 0 8px 8px;
+}
+
+.entity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.entity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--color-foreground);
+  font-weight: 500;
+  border: 1.5px solid transparent;
+}
+
+.entity-item:hover {
+  background: var(--color-primary-bg);
+}
+
+.entity-item.active {
+  background: var(--color-bg-card);
+  border-color: var(--color-border-strong);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.08);
+}
+
+.entity-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.entity-avatar.self {
+  background: var(--color-primary);
+  color: white;
+}
+
+.entity-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.entity-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.entity-relation {
+  font-size: 11px;
+  color: var(--color-primary-light);
+  font-weight: 400;
+}
+
+/* 聊天主区域 */
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--color-bg-card);
+}
+
+.chat-header {
+  padding: 20px 28px;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
-.topbar-inner {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  height: 60px;
-}
-
-.btn-icon {
-  padding: var(--space-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chat-title h3 {
+.chat-header h2 {
+  font-family: var(--font-serif);
   font-size: 1.125rem;
   font-weight: 600;
+  color: var(--color-foreground);
+  margin: 0 0 4px;
 }
 
-.chat-scenario {
-  font-size: 0.75rem;
+.chat-sub {
+  font-size: 0.875rem;
   color: var(--color-text-light);
+  margin: 0;
 }
 
+/* 消息区域 */
 .messages-container {
   flex: 1;
+  padding: 28px;
   overflow-y: auto;
-  padding: var(--space-lg) 0;
-}
-
-.messages-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: 18px;
+  background: linear-gradient(180deg, var(--color-primary-bg) 0%, var(--color-bg-card) 100%);
 }
 
 .messages-empty {
@@ -217,60 +378,102 @@ onMounted(() => {
   color: var(--color-text-light);
 }
 
-.empty-icon {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto var(--space-md);
+.messages-empty .empty-icon {
+  font-size: 48px;
+  margin-bottom: var(--space-md);
   color: var(--color-border-strong);
 }
 
-.message-row {
+.messages-empty h3 {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  margin-bottom: var(--space-sm);
+  color: var(--color-text);
+}
+
+.messages-list {
   display: flex;
-  animation: fadeIn 0.3s ease-out;
+  flex-direction: column;
+  gap: 18px;
 }
 
-.message-row.user {
-  justify-content: flex-end;
+.message {
+  display: flex;
+  gap: 12px;
+  max-width: 80%;
+  animation: fadeUp 0.3s ease;
 }
 
-.message-row.assistant {
-  justify-content: flex-start;
+.message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
 }
 
-.message-bubble {
-  max-width: 70%;
-  padding: var(--space-md) var(--space-lg);
-  border-radius: var(--radius-lg);
-  line-height: 1.6;
-  font-size: 0.9375rem;
+.message.assistant {
+  align-self: flex-start;
 }
 
-.message-row.user .message-bubble {
+.message .avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-primary);
+}
+
+.message.user .avatar {
   background: var(--color-primary);
   color: white;
-  border-bottom-right-radius: var(--radius-sm);
 }
 
-.message-row.assistant .message-bubble {
+.message .message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message .bubble {
   background: var(--color-bg-card);
-  color: var(--color-foreground);
+  padding: 14px 20px;
+  border-radius: 18px;
+  border-bottom-left-radius: 6px;
+  box-shadow: 0 1px 4px rgba(139, 92, 246, 0.04);
   border: 1px solid var(--color-border);
-  border-bottom-left-radius: var(--radius-sm);
-  box-shadow: var(--shadow-sm);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-foreground);
 }
 
-.message-time {
-  display: block;
-  font-size: 0.6875rem;
-  opacity: 0.6;
-  margin-top: var(--space-xs);
+.message.user .bubble {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 18px;
 }
 
-/* Typing indicator */
+.message .meta {
+  font-size: 12px;
+  color: var(--color-text-light);
+  padding-left: 4px;
+}
+
+.message.user .meta {
+  text-align: right;
+  padding-right: 4px;
+}
+
+/* 打字指示器 */
 .typing {
   display: flex;
   gap: 4px;
-  padding: var(--space-md) var(--space-lg);
+  padding: 14px 20px;
   min-width: 60px;
 }
 
@@ -290,54 +493,86 @@ onMounted(() => {
   40% { transform: scale(1); opacity: 1; }
 }
 
-@keyframes fadeIn {
+@keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Input area */
-.input-area {
-  flex-shrink: 0;
-  background: var(--color-bg-card);
-  border-top: 1px solid var(--color-border);
-  padding: var(--space-md) 0;
-}
-
-.input-wrapper {
-  display: flex;
-  gap: var(--space-sm);
-  align-items: flex-end;
-}
-
+/* 输入框 */
 .chat-input {
+  padding: 16px 28px 24px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  gap: 12px;
+  background: var(--color-bg-card);
+  flex-shrink: 0;
+}
+
+.chat-input textarea {
   flex: 1;
-  padding: var(--space-sm) var(--space-md);
+  padding: 12px 18px;
+  border-radius: 40px;
   border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  font-family: var(--font-sans);
-  font-size: 0.9375rem;
-  color: var(--color-foreground);
-  background: var(--color-bg);
+  font-size: 15px;
+  outline: none;
+  transition: 0.2s ease;
+  background: var(--color-bg-muted);
+  font-family: inherit;
   resize: none;
-  line-height: 1.5;
   min-height: 44px;
   max-height: 120px;
-  transition: border-color var(--transition-fast);
 }
 
-.chat-input:focus {
-  outline: none;
+.chat-input textarea:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.08);
 }
 
-.chat-input::placeholder {
+.chat-input textarea::placeholder {
   color: var(--color-text-light);
 }
 
-.btn-send {
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-lg);
-  flex-shrink: 0;
+.send-btn {
+  background: var(--color-primary);
+  border: none;
+  padding: 0 28px;
+  border-radius: 40px;
+  color: white;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.send-btn:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 滚动条 */
+.messages-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 20px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 200px;
+  }
 }
 </style>
