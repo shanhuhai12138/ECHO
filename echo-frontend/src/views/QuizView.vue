@@ -136,9 +136,25 @@ const activeCategory = ref(null)
 const questions = ref([])
 const currentQuestionIndex = ref(0)
 const selectedAnswer = ref(null)
-const answers = ref({})
+const answers = ref({})  // 当前分类的答案
 const showResult = ref(false)
 const resultStats = ref({ completed: 0, dimensions: 0 })
+
+// 按分类暂存答案到 localStorage
+function saveAnswersToStorage(categoryId, ans) {
+  try {
+    const saved = JSON.parse(localStorage.getItem('echo_quiz_answers') || '{}')
+    saved[categoryId] = ans
+    localStorage.setItem('echo_quiz_answers', JSON.stringify(saved))
+  } catch (e) { /* ignore */ }
+}
+
+function loadAnswersFromStorage(categoryId) {
+  try {
+    const saved = JSON.parse(localStorage.getItem('echo_quiz_answers') || '{}')
+    return saved[categoryId] || {}
+  } catch (e) { return {} }
+}
 
 onMounted(async () => {
   await loadCategories()
@@ -157,12 +173,19 @@ async function loadCategories() {
 }
 
 async function selectCategory(cat) {
+  // 保存当前分类的答案再切换
+  if (activeCategoryId.value) {
+    saveAnswersToStorage(activeCategoryId.value, answers.value)
+  }
+
   activeCategoryId.value = cat.id
   activeCategory.value = cat
   currentQuestionIndex.value = 0
   selectedAnswer.value = null
-  answers.value = {}
   showResult.value = false
+
+  // 恢复已保存的答案
+  answers.value = loadAnswersFromStorage(cat.id)
   await loadQuestions(cat.id)
 }
 
