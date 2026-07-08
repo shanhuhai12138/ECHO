@@ -76,7 +76,7 @@ onMounted(() => {
 async function loadPersona() {
   personaLoading.value = true
   try {
-    const res = await api.get(`/api/persona/${authStore.userId}`)
+    const res = await api.get(`/persona/${authStore.userId}`)
     personaDims.value = res.data.dimensions || []
   } catch (e) {
     console.error('Failed to load persona:', e)
@@ -99,7 +99,7 @@ function editDimension(dim) {
 async function saveDimension() {
   saving.value = true
   try {
-    await api.put(`/api/persona/${authStore.userId}/dimensions`, editForm.value)
+    await api.put(`/persona/${authStore.userId}/dimensions`, editForm.value)
     showEditModal.value = false
     loadPersona()
   } catch (e) {
@@ -112,7 +112,7 @@ async function saveDimension() {
 async function deleteDimension(key) {
   if (!confirm('确定删除这个维度？')) return
   try {
-    await api.delete(`/api/persona/${authStore.userId}/dimensions/${key}`)
+    await api.delete(`/persona/${authStore.userId}/dimensions/${key}`)
     loadPersona()
   } catch (e) {
     alert('删除失败')

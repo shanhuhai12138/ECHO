@@ -131,7 +131,7 @@ onMounted(async () => {
 async function loadPersona() {
   personaLoading.value = true
   try {
-    const res = await api.get(`/api/persona/${authStore.userId}`)
+    const res = await api.get(`/persona/${authStore.userId}`)
     personaDims.value = res.data.dimensions || []
   } catch (e) {
     console.error('Failed to load persona:', e)

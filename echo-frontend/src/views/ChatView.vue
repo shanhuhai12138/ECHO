@@ -125,6 +125,7 @@ onMounted(async () => {
     // 加载当前聊天框的消息
     if (activeBoxId.value) {
       await loadMessages(activeBoxId.value)
+      await loadBoxInfo(activeBoxId.value)
     }
   } catch (e) {
     console.error('Failed to load chat boxes:', e)
@@ -136,13 +137,28 @@ watch(() => route.params.id, async (newId) => {
   if (newId) {
     activeBoxId.value = newId
     messages.value = []
+    activeBox.value = null
     await loadMessages(newId)
+    // 加载聊天框信息
+    await loadBoxInfo(newId)
   }
 })
 
+async function loadBoxInfo(chatBoxId) {
+  try {
+    // 从 chatBoxes 列表中查找
+    const box = chatBoxes.value.find(b => b.id === chatBoxId)
+    if (box) {
+      activeBox.value = box
+    }
+  } catch (e) {
+    console.error('Failed to load box info:', e)
+  }
+}
+
 async function loadMessages(chatBoxId) {
   try {
-    const res = await api.get(`/api/chat/${chatBoxId}/messages`)
+    const res = await api.get(`/chat/${chatBoxId}/messages`)
     messages.value = res.data
     scrollToBottom()
   } catch (e) {
@@ -173,7 +189,7 @@ async function sendMessage() {
 
   try {
     // 调用后端 AI 接口
-    const res = await api.post(`/api/chat/${activeBoxId.value}`, { content: userText })
+    const res = await api.post(`/chat/${activeBoxId.value}`, { content: userText })
 
     const aiMsg = {
       id: res.data.messageId,

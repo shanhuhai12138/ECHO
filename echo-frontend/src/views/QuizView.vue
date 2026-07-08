@@ -149,7 +149,7 @@ onMounted(async () => {
 
 async function loadCategories() {
   try {
-    const res = await api.get('/api/quiz/categories')
+    const res = await api.get('/quiz/categories')
     categories.value = res.data
   } catch (e) {
     console.error('Failed to load categories:', e)
@@ -168,7 +168,7 @@ async function selectCategory(cat) {
 
 async function loadQuestions(categoryId) {
   try {
-    const res = await api.get(`/api/quiz/${categoryId}/questions`)
+    const res = await api.get(`/quiz/${categoryId}/questions`)
     questions.value = res.data
   } catch (e) {
     console.error('Failed to load questions:', e)
@@ -206,7 +206,7 @@ async function submitQuiz() {
   }
 
   try {
-    const res = await api.post(`/api/quiz/${activeCategory.value.id}/submit?userId=${authStore.userId}`, { answers: answers.value })
+    const res = await api.post(`/quiz/${activeCategory.value.id}/submit?userId=${authStore.userId}`, { answers: answers.value })
     showResult.value = true
     resultStats.value = {
       completed: Object.keys(answers.value).length,
